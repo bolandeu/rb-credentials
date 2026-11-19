@@ -620,6 +620,7 @@ keyring = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "keyring" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
@@ -635,6 +636,7 @@ provides-extras = ["keyring"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "keyring", specifier = ">=25.0" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-cov", specifier = ">=5.0" },
     { name = "ruff", specifier = ">=0.6" },

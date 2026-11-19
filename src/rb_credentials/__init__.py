@@ -23,6 +23,8 @@ __all__ = [
     "CredentialsUnavailable",
     "EnvironmentCredentials",
     "KeyringCredentials",
+    "Store",
+    "StoreUnavailable",
     "parse_address",
     "providers_for",
     "resolve_credential",
@@ -31,6 +33,10 @@ __all__ = [
 
 class CredentialsUnavailable(Exception):
     """No provider produced a usable credential for the requested name."""
+
+
+class StoreUnavailable(Exception):
+    """The OS credential store is missing (no `keyring` extra) or refused the operation."""
 
 
 class Credential(BaseModel):
@@ -150,3 +156,6 @@ def resolve_credential(*providers: CredentialProvider, name: str) -> Credential:
         if credential is not None:
             return credential
     raise CredentialsUnavailable(f"No credential is configured for {name!r}. Ask the environment owner to map it.")
+
+
+from .store import Store  # noqa: E402  — needs the errors above; keeps `import rb_credentials` cheap
