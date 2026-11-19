@@ -248,3 +248,14 @@ def test_an_injected_backend_is_used_instead_of_the_real_one() -> None:
     store.store_secret("openai", "sk-injected")
     assert fake.entries[("demo:openai", "openai")]
     assert store.get_secret("openai") == "sk-injected"
+
+
+def test_a_bare_legacy_value_is_read_as_the_named_field(keyring: FakeKeyring) -> None:
+    keyring.entries[("hostme:client.ru", "client.ru")] = "s3cret"
+    store = Store("hostme", keyring=keyring, bare_field="password")
+    assert store.get("client.ru") == {"password": "s3cret"}
+
+
+def test_without_bare_field_a_bare_value_is_ignored(keyring: FakeKeyring) -> None:
+    keyring.entries[("demo:openai", "openai")] = "raw"
+    assert Store("demo", keyring=keyring).get("openai") is None

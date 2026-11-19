@@ -52,10 +52,18 @@ class Store:
     """Credentials of one package: namespace for the keychain and the environment names."""
 
     def __init__(
-        self, namespace: str, *, shared_namespaces: tuple[str, ...] = (), keyring: object | None = None
+        self,
+        namespace: str,
+        *,
+        shared_namespaces: tuple[str, ...] = (),
+        keyring: object | None = None,
+        bare_field: str | None = None,
     ) -> None:
         self.namespace = namespace
         self.shared_namespaces = tuple(shared_namespaces)
+        # A keychain entry written by an older release may be one raw string rather than a JSON bag:
+        # with `bare_field`, such an entry is read as that field's value (e.g. "password").
+        self.bare_field = bare_field
         # An injected backend (a test double, another keyring module) wins over the default one.
         self._injected_keyring = keyring
         self._keychain_problem: str | None = None
@@ -106,10 +114,19 @@ class Store:
         if not raw:
             return {}
         try:
-            return json.loads(raw)
+            parsed = json.loads(raw)
         except json.JSONDecodeError:
-            log.warning("stored credential for '%s' is not valid JSON; ignoring it", provider)
+            parsed = None
+        if isinstance(parsed, dict):
+            return parsed
+        if parsed is not None:
+            log.warning("stored credential for '%s' is JSON but not an object; ignoring it", provider)
             return {}
+        if self.bare_field is not None:
+            # A single value from an older release: one field, no bag.
+            return {self.bare_field: raw}
+        log.warning("stored credential for '%s' is not valid JSON; ignoring it", provider)
+        return {}
 
     def service_name_for(self, provider: str, namespace: str) -> str:
         return f"{namespace}:{provider}"
