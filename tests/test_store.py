@@ -240,3 +240,11 @@ def test_a_failing_keychain_on_slots(keyring: FakeKeyring) -> None:
         store.set_value("service_account", "{}")
     with pytest.raises(StoreUnavailable):
         store.delete_value("service_account")
+
+
+def test_an_injected_backend_is_used_instead_of_the_real_one() -> None:
+    fake = FakeKeyring()
+    store = Store("demo", keyring=fake)
+    store.store_secret("openai", "sk-injected")
+    assert fake.entries[("demo:openai", "openai")]
+    assert store.get_secret("openai") == "sk-injected"

@@ -51,9 +51,13 @@ def _keyring():
 class Store:
     """Credentials of one package: namespace for the keychain and the environment names."""
 
-    def __init__(self, namespace: str, *, shared_namespaces: tuple[str, ...] = ()) -> None:
+    def __init__(
+        self, namespace: str, *, shared_namespaces: tuple[str, ...] = (), keyring: object | None = None
+    ) -> None:
         self.namespace = namespace
         self.shared_namespaces = tuple(shared_namespaces)
+        # An injected backend (a test double, another keyring module) wins over the default one.
+        self._injected_keyring = keyring
         self._keychain_problem: str | None = None
         self._warned_missing = False
 
@@ -70,7 +74,7 @@ class Store:
 
     @property
     def _keyring(self):
-        return _keyring()
+        return self._injected_keyring if self._injected_keyring is not None else _keyring()
 
     @property
     def unavailable_reason(self) -> str | None:
@@ -82,7 +86,7 @@ class Store:
     def backend(self) -> str | None:
         """Name of the active keyring backend, or None when only the environment can supply secrets."""
         keyring = self._keyring
-        if keyring is None:
+        if keyring is None or not hasattr(keyring, "get_keyring"):
             return None
         backend = keyring.get_keyring()
         return f"{type(backend).__module__}.{type(backend).__name__}"
