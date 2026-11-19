@@ -120,12 +120,12 @@ class Store:
         if isinstance(parsed, dict):
             return parsed
         if parsed is not None:
-            log.warning("stored credential for '%s' is JSON but not an object; ignoring it", provider)
+            log.debug("stored credential for '%s' is JSON but not an object; ignoring it", provider)
             return {}
         if self.bare_field is not None:
             # A single value from an older release: one field, no bag.
             return {self.bare_field: raw}
-        log.warning("stored credential for '%s' is not valid JSON; ignoring it", provider)
+        log.debug("stored credential for '%s' is not valid JSON; ignoring it", provider)
         return {}
 
     def service_name_for(self, provider: str, namespace: str) -> str:
@@ -145,7 +145,7 @@ class Store:
         try:
             names = json.loads(raw)
         except json.JSONDecodeError:
-            log.warning("the stored-credentials index of '%s' is not valid JSON; ignoring it", self.namespace)
+            log.debug("the stored-credentials index of '%s' is not valid JSON; ignoring it", self.namespace)
             return []
         return sorted(names)
 
@@ -158,7 +158,7 @@ class Store:
         try:
             keyring.set_password(self.namespace, _INDEX_USER, json.dumps(sorted(names)))
         except keyring.errors.KeyringError as exc:  # the credential itself is stored; only listing suffers
-            log.warning("could not update the stored-credentials index (%s)", exc)
+            log.debug("could not update the stored-credentials index (%s)", exc)
 
     # --- reading ----------------------------------------------------------------
 
@@ -229,7 +229,9 @@ class Store:
     def _warn_if_missing(self, provider: str, missing: list[str]) -> None:
         if missing and self._keychain_problem is not None and not self._warned_missing:
             self._warned_missing = True
-            log.warning(
+            # DEBUG, not WARNING: a library must not write to the caller's stdout/stderr. The caller reads
+            # `unavailable_reason` and decides what to tell the user.
+            log.debug(
                 "OS credential store unavailable (%s) and %s not set in the environment for '%s'",
                 self._keychain_problem,
                 ", ".join(missing),
@@ -286,7 +288,7 @@ class Store:
         except keyring.errors.KeyringError as exc:
             if self._keychain_problem is None:
                 self._keychain_problem = str(exc)
-                log.warning("OS credential store unavailable (%s); using environment variables only", exc)
+                log.debug("OS credential store unavailable (%s); using environment variables only", exc)
             return None
         return value or None
 
