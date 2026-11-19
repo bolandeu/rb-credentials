@@ -67,9 +67,7 @@ class CredentialProvider(Protocol):
 class EnvironmentCredentials:
     """Read addresses from a mapping of credential name to environment variable."""
 
-    def __init__(
-        self, mapping: Mapping[str, str], environ: Mapping[str, str] | None = None
-    ) -> None:
+    def __init__(self, mapping: Mapping[str, str], environ: Mapping[str, str] | None = None) -> None:
         self.mapping = dict(mapping)
         self.environ = os.environ if environ is None else environ
 
@@ -151,6 +149,4 @@ def resolve_credential(*providers: CredentialProvider, name: str) -> Credential:
         credential = provider.resolve(name)
         if credential is not None:
             return credential
-    raise CredentialsUnavailable(
-        f"No credential is configured for {name!r}. Ask the environment owner to map it."
-    )
+    raise CredentialsUnavailable(f"No credential is configured for {name!r}. Ask the environment owner to map it.")

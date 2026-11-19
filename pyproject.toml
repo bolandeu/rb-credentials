@@ -1,61 +1,82 @@
-[build-system]
-requires = ["pdm-backend>=2.4,<3"]
-build-backend = "pdm.backend"
-
 [project]
 name = "rb-credentials"
-version = "0.1.0"
-description = "Resolve named credentials without storing or printing secrets."
+# Version comes from the git tag vX.Y.Z (uv-dynamic-versioning) — never add `version =`.
+dynamic = ["version"]
+description = "Resolve named credentials without storing or printing secrets: the environment knows addresses, the package knows names."
 readme = "README.md"
-license = "ISC"
+license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
-    "Typing :: Typed",
-]
+authors = [{ name = "Roman Bolandau" }]
 dependencies = ["pydantic>=2.10,<3"]
 
 [project.optional-dependencies]
-keyring = ["keyring>=25"]
+keyring = ["keyring>=25.0"]
 
-[project.urls]
-Repository = "https://github.com/bolandeu/rb-credentials"
-Issues = "https://github.com/bolandeu/rb-credentials/issues"
+[tool.rb.install]
+homeserver = []  # library: nobody runs it
+mac = false
 
-[dependency-groups]
-dev = [
-    "poethepoet>=0.35,<1",
-    "pytest>=8.3,<10",
-    "ruff>=0.11,<1",
-    "ty>=0.0.14,<1",
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+vcs = "git"
+style = "pep440"
+fallback-version = "0.0.0"
+
+[tool.uv]
+cache-keys = [{ file = "pyproject.toml" }, { git = { commit = true, tags = true } }]
+
+[tool.hatch.build.targets.sdist]
+# What a release must not carry: the agent's own files, the forge configs and the dev tooling.
+exclude = [
+  "/.agents",
+  "/.claude",
+  "/.claude-plugin",
+  "/.gitea",
+  "/.github",
+  "/docs",
+  "/scripts",
+  "/uv.lock",
+  "/AGENTS.md",
+  "/CLAUDE.md",
+  "/CODING_STANDARDS.md",
+  "/CONTEXT.md",
+  "/.copier-answers.yml",
+  "^\\.gitignore$",
+  "/.gitleaks.toml",
 ]
 
-[tool.ruff]
-target-version = "py311"
-line-length = 100
+[tool.hatch.build.targets.wheel]
+packages = ["src/rb_credentials"]
 
-[tool.ruff.lint]
-select = ["E4", "E7", "E9", "F", "I", "UP", "B"]
-
-[tool.ty.src]
-include = ["src", "tests"]
+[dependency-groups]
+dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.6", "ty"]
 
 [tool.pytest.ini_options]
-addopts = "--strict-config --strict-markers"
 testpaths = ["tests"]
+addopts = "--cov --cov-report=term-missing:skip-covered"
 
-[tool.poe.tasks]
-lint = "ruff check src tests"
-format-check = "ruff format --check src tests"
-types = "ty check"
-test = "pytest"
-check = ["lint", "format-check", "types", "test"]
+[tool.coverage.run]
+source = ["src"]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+
+[tool.ty.terminal]
+error-on-warning = false
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP", "B", "SIM", "RUF", "S", "T20"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "S106"]  # fake secrets are the point of the tests

@@ -52,9 +52,7 @@ def test_token_is_masked_and_blank_tokens_are_rejected() -> None:
 
 
 def test_expiry_is_explicit() -> None:
-    expired = Credential(
-        name="api", token="value", expires_at=datetime.now(UTC) - timedelta(seconds=1)
-    )
+    expired = Credential(name="api", token="value", expires_at=datetime.now(UTC) - timedelta(seconds=1))
     assert expired.is_expired()
     assert not Credential(name="api", token="value").is_expired()
 
