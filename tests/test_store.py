@@ -201,3 +201,11 @@ def test_the_real_keyring_backend_is_detected() -> None:
         assert Store("demo").backend() is None
     else:
         assert Store("demo").backend()
+
+
+def test_the_reason_a_keychain_could_not_be_read_is_public(keyring: FakeKeyring) -> None:
+    store = Store("demo")
+    assert store.unavailable_reason is None
+    keyring.fail = True
+    store.stored("openai")
+    assert "secret service" in (store.unavailable_reason or "")

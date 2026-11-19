@@ -72,6 +72,11 @@ class Store:
     def _keyring(self):
         return _keyring()
 
+    @property
+    def unavailable_reason(self) -> str | None:
+        """Why the keychain could not be read, or None: `doctor` and `auth status` report it."""
+        return self._keychain_problem
+
     # --- the stored set ---------------------------------------------------------
 
     def backend(self) -> str | None:
