@@ -252,6 +252,43 @@ class Store:
             raise StoreUnavailable(f"could not delete '{provider}': {exc}") from exc
         self._update_index(provider, present=False)
 
+    # --- one raw value per slot ---------------------------------------------------
+    # Some stores are a single string per (kind, name) — a service-account JSON, one API key — rather than a bag
+    # of fields. They share the keychain and the "read once, warn once" state of this store.
+
+    def get_value(self, kind: str, name: str = "default") -> str | None:
+        keyring = self._keyring
+        if keyring is None:
+            return None
+        try:
+            value = keyring.get_password(self.service_name(kind), name)
+        except keyring.errors.KeyringError as exc:
+            if self._keychain_problem is None:
+                self._keychain_problem = str(exc)
+                log.warning("OS credential store unavailable (%s); using environment variables only", exc)
+            return None
+        return value or None
+
+    def set_value(self, kind: str, value: str, name: str = "default") -> None:
+        keyring = self._keyring
+        if keyring is None:
+            raise StoreUnavailable(f"no OS credential store: install the 'keyring' extra to store '{kind}'")
+        try:
+            keyring.set_password(self.service_name(kind), name, value)
+        except keyring.errors.KeyringError as exc:
+            raise StoreUnavailable(f"could not store '{kind}': {exc}") from exc
+
+    def delete_value(self, kind: str, name: str = "default") -> None:
+        keyring = self._keyring
+        if keyring is None:
+            raise StoreUnavailable(f"no OS credential store: nothing to delete for '{kind}'")
+        try:
+            keyring.delete_password(self.service_name(kind), name)
+        except keyring.errors.PasswordDeleteError:
+            pass
+        except keyring.errors.KeyringError as exc:
+            raise StoreUnavailable(f"could not delete '{kind}': {exc}") from exc
+
     # --- helpers for the callers -------------------------------------------------
 
     def require(self, provider: str, field: str = _DEFAULT_FIELD) -> str:

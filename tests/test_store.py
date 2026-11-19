@@ -209,3 +209,34 @@ def test_the_reason_a_keychain_could_not_be_read_is_public(keyring: FakeKeyring)
     keyring.fail = True
     store.stored("openai")
     assert "secret service" in (store.unavailable_reason or "")
+
+
+def test_one_raw_value_per_slot(keyring: FakeKeyring) -> None:
+    store = Store("google-oauth")
+    store.set_value("service_account", '{"k": 1}')
+    assert store.get_value("service_account") == '{"k": 1}'
+    store.set_value("api_key", "key-1", name="psi")
+    assert store.get_value("api_key", "psi") == "key-1"
+    store.delete_value("service_account")
+    assert store.get_value("service_account") is None
+    store.delete_value("never-there")
+
+
+def test_slot_errors_are_store_unavailable(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(store_module, "_keyring", lambda: None)
+    store = Store("demo")
+    with pytest.raises(StoreUnavailable):
+        store.set_value("service_account", "{}")
+    with pytest.raises(StoreUnavailable):
+        store.delete_value("service_account")
+
+
+def test_a_failing_keychain_on_slots(keyring: FakeKeyring) -> None:
+    store = Store("demo")
+    keyring.fail = True
+    assert store.get_value("service_account") is None
+    assert store.unavailable_reason
+    with pytest.raises(StoreUnavailable):
+        store.set_value("service_account", "{}")
+    with pytest.raises(StoreUnavailable):
+        store.delete_value("service_account")
