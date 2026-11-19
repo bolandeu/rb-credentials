@@ -259,3 +259,19 @@ def test_a_bare_legacy_value_is_read_as_the_named_field(keyring: FakeKeyring) ->
 def test_without_bare_field_a_bare_value_is_ignored(keyring: FakeKeyring) -> None:
     keyring.entries[("demo:openai", "openai")] = "raw"
     assert Store("demo", keyring=keyring).get("openai") is None
+
+
+def test_deleting_on_a_host_without_a_keychain_can_be_a_no_op(
+    keyring: FakeKeyring, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    keyring.fail = True
+    store = Store("hostme", keyring=keyring)
+    with pytest.raises(StoreUnavailable):
+        store.delete("client.ru")
+    store.delete("client.ru", ignore_unavailable=True)
+
+    monkeypatch.setattr(store_module, "_keyring", lambda: None)
+    without = Store("hostme")
+    with pytest.raises(StoreUnavailable):
+        without.delete("client.ru")
+    without.delete("client.ru", ignore_unavailable=True)

@@ -262,17 +262,26 @@ class Store:
     def store_secret(self, provider: str, secret: str, field: str = _DEFAULT_FIELD) -> None:
         self.store(provider, {field: secret})
 
-    def delete(self, provider: str) -> None:
-        """Remove a provider's credential; deleting an absent one is not an error."""
+    def delete(self, provider: str, *, ignore_unavailable: bool = False) -> None:
+        """Remove a provider's credential; deleting an absent one is not an error.
+
+        `ignore_unavailable`: a machine without a keychain has nothing stored, so there is nothing to delete —
+        a package that treats a headless host as "no secrets here" passes True instead of failing the command.
+        """
         keyring = self._keyring
         if keyring is None:
+            if ignore_unavailable:
+                return
             raise StoreUnavailable(f"no OS credential store: nothing to delete for '{provider}'")
         try:
             keyring.delete_password(self.service_name(provider), provider)
         except keyring.errors.PasswordDeleteError:
             pass
         except keyring.errors.KeyringError as exc:
-            raise StoreUnavailable(f"could not delete '{provider}': {exc}") from exc
+            if ignore_unavailable:
+                log.debug("OS credential store unavailable when deleting '%s' (%s)", provider, exc)
+            else:
+                raise StoreUnavailable(f"could not delete '{provider}': {exc}") from exc
         self._update_index(provider, present=False)
 
     # --- one raw value per slot ---------------------------------------------------
