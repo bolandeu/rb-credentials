@@ -1,0 +1,61 @@
+[build-system]
+requires = ["pdm-backend>=2.4,<3"]
+build-backend = "pdm.backend"
+
+[project]
+name = "rb-credentials"
+version = "0.1.0"
+description = "Resolve named credentials without storing or printing secrets."
+readme = "README.md"
+license = "ISC"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
+]
+dependencies = ["pydantic>=2.10,<3"]
+
+[project.optional-dependencies]
+keyring = ["keyring>=25"]
+
+[project.urls]
+Repository = "https://github.com/bolandeu/rb-credentials"
+Issues = "https://github.com/bolandeu/rb-credentials/issues"
+
+[dependency-groups]
+dev = [
+    "poethepoet>=0.35,<1",
+    "pytest>=8.3,<10",
+    "ruff>=0.11,<1",
+    "ty>=0.0.14,<1",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP", "B"]
+
+[tool.ty.src]
+include = ["src", "tests"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-config --strict-markers"
+testpaths = ["tests"]
+
+[tool.poe.tasks]
+lint = "ruff check src tests"
+format-check = "ruff format --check src tests"
+types = "ty check"
+test = "pytest"
+check = ["lint", "format-check", "types", "test"]
