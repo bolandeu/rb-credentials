@@ -16,10 +16,12 @@ __all__ = [
     "EXIT_OK",
     "EXIT_PROBLEM",
     "Health",
+    "HealthStatus",
     "Quota",
     "entry",
     "exit_code",
     "is_problem",
+    "iso",
     "problems",
     "report",
     "scrub",
@@ -61,7 +63,7 @@ def scrub(message: str | None, secrets: Sequence[str | None]) -> str | None:
     return message
 
 
-def _iso(moment: datetime | None) -> str | None:
+def iso(moment: datetime | None) -> str | None:
     return moment.astimezone(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z") if moment else None
 
 
@@ -90,7 +92,7 @@ def entry(
         "source": source,
         "source_ref": source_ref,
         "status": status,
-        "expires_at": _iso(expires_at),
+        "expires_at": iso(expires_at),
         "quota": vars(quota) if quota else None,
         "message": message,
     }
@@ -101,7 +103,7 @@ def report(tool: str, version: str, entries: list[dict]) -> dict:
     return {
         "tool": tool,
         "version": version,
-        "checked_at": _iso(datetime.now(UTC)),
+        "checked_at": iso(datetime.now(UTC)),
         "credentials": entries,
     }
 
